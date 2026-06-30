@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data Flow Pipeline</title>
+  <style>
+    :root {
+      --bg: #fbfaf7;
+      --ink: #15202b;
+      --line-bg: rgba(150, 160, 168, .16);
+      --teal: #0fa77c;
+      --teal-soft: #e2f7f0;
+      --blue: #2387df;
+      --blue-soft: #e5f2ff;
+      --amber: #bf760d;
+      --amber-soft: #fff0d9;
+      --violet: #7d72f2;
+      --violet-soft: #eeecff;
+      --coral: #e1633a;
+      --coral-soft: #fff1ec;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    }
+
+    .wrap {
+      width: min(100vw, 1400px);
+      overflow: auto;
+      padding: 20px;
+    }
+
+    .flow {
+      position: relative;
+      width: 1320px;
+      height: 700px;
+      margin: 0 auto;
+      background:
+        radial-gradient(circle, rgba(180, 190, 196, .18) 1px, transparent 1.2px) 0 0 / 12px 12px;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+      width: 1320px;
+      height: 700px;
+      pointer-events: none;
+      overflow: visible;
+      z-index: 1;
+    }
+
+    .ghost,
+    .pipe {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .ghost {
+      stroke: var(--line-bg);
+      stroke-width: 9;
+    }
+
+    .pipe {
+      stroke-width: 3;
+      stroke-dasharray: 8 7;
+      animation: move 1.5s linear infinite;
+    }
+
+    @keyframes move {
+      to { stroke-dashoffset: -30; }
+    }
+
+    .card,
+    .hub {
+      position: absolute;
+      z-index: 2;
+    }
+
+    .card {
+      border: 1px solid;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .78);
+      box-shadow:
+        0 14px 30px rgba(30, 38, 45, .05),
+        inset 0 1px 0 rgba(255, 255, 255, .65);
+      font-size: 11px;
+      line-height: 1.28;
+      font-weight: 720;
+    }
+
+    .source {
+      width: 250px;
+      min-height: 112px;
+      padding: 10px 12px 30px;
+    }
+
+    .source.tall {
+      min-height: 154px;
+    }
+
+    .mini {
+      width: 150px;
+      min-height: 46px;
+      padding: 9px 10px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      font-size: 10.5px;
+      line-height: 1.25;
+      font-weight: 820;
+    }
+
+    .out {
+      width: 310px;
+      min-height: 92px;
+      padding: 11px 13px;
+    }
+
+    .title {
+      display: block;
+      margin-bottom: 7px;
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.2;
+      font-weight: 850;
+    }
+
+    .out .title {
+      padding-bottom: 7px;
+      border-bottom: 1px solid currentColor;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 16px;
+      text-align: left;
+    }
+
+    li {
+      margin: 2px 0;
+      padding-left: 1px;
+    }
+
+    .chip,
+    .tag {
+      display: inline-grid;
+      place-items: center;
+      border-radius: 999px;
+      border: 1px solid currentColor;
+      background: rgba(255, 255, 255, .42);
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 850;
+    }
+
+    .chip {
+      position: absolute;
+      left: 13px;
+      right: 13px;
+      bottom: 8px;
+      height: 18px;
+    }
+
+    .tag {
+      min-height: 18px;
+      margin-top: 7px;
+      padding: 0 9px;
+    }
+
+    .hub {
+      left: 585px;
+      top: 304px;
+      width: 250px;
+      height: 92px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      border-radius: 999px / 50%;
+      color: #05745f;
+      border: 1.5px solid var(--teal);
+      background: #e2f8f1;
+      box-shadow:
+        0 0 0 9px rgba(15, 167, 124, .08),
+        0 18px 34px rgba(6, 75, 62, .08);
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .hub small {
+      display: block;
+      margin-top: 6px;
+      font-size: 11px;
+      line-height: 1.2;
+      color: #076b58;
+      font-weight: 760;
+    }
+
+    .teal {
+      color: #075f4e;
+      border-color: rgba(15, 167, 124, .42);
+      background: var(--teal-soft);
+    }
+
+    .blue {
+      color: #155d9f;
+      border-color: rgba(35, 135, 223, .38);
+      background: var(--blue-soft);
+    }
+
+    .amber {
+      color: #704006;
+      border-color: rgba(191, 118, 13, .38);
+      background: var(--amber-soft);
+    }
+
+    .violet {
+      color: #3d36a0;
+      border-color: rgba(125, 114, 242, .38);
+      background: var(--violet-soft);
+    }
+
+    .coral {
+      color: #8d321b;
+      border-color: rgba(225, 99, 58, .56);
+      background: var(--coral-soft);
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="flow" aria-label="Sơ đồ data flow ngang">
+      <svg viewBox="0 0 1320 700" aria-hidden="true">
+        <defs>
+          <marker id="arrow-teal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M2 1 L8 5 L2 9" fill="none" stroke="#0fa77c" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+          <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M2 1 L8 5 L2 9" fill="none" stroke="#2387df" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+          <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M2 1 L8 5 L2 9" fill="none" stroke="#bf760d" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+          <marker id="arrow-violet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M2 1 L8 5 L2 9" fill="none" stroke="#7d72f2" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+          <marker id="arrow-coral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M2 1 L8 5 L2 9" fill="none" stroke="#e1633a" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <path class="ghost" d="M282 86 L306 86 Q318 86 328 69 L330 69"/>
+        <path class="pipe" d="M282 86 L306 86 Q318 86 328 69 L330 69" stroke="#0fa77c" marker-end="url(#arrow-teal)"/>
+        <path class="ghost" d="M282 86 L306 86 Q318 86 328 130 L330 130"/>
+        <path class="pipe" d="M282 86 L306 86 Q318 86 328 130 L330 130" stroke="#0fa77c" marker-end="url(#arrow-teal)"/>
+        <path class="ghost" d="M480 130 L522 130 Q548 130 560 156 L636 306"/>
+        <path class="pipe" d="M480 130 L522 130 Q548 130 560 156 L636 306" stroke="#0fa77c" marker-end="url(#arrow-teal)"/>
+
+        <path class="ghost" d="M282 240 L362 240 Q410 240 448 264 L604 330"/>
+        <path class="pipe" d="M282 240 L362 240 Q410 240 448 264 L604 330" stroke="#2387df" marker-end="url(#arrow-blue)"/>
+        <path class="ghost" d="M282 380 L362 380 Q410 380 448 362 L604 360"/>
+        <path class="pipe" d="M282 380 L362 380 Q410 380 448 362 L604 360" stroke="#bf760d" marker-end="url(#arrow-amber)"/>
+        <path class="ghost" d="M282 548 L362 548 Q410 548 448 512 L604 382"/>
+        <path class="pipe" d="M282 548 L362 548 Q410 548 448 512 L604 382" stroke="#7d72f2" marker-end="url(#arrow-violet)"/>
+
+        <path class="ghost" d="M835 332 L900 332 Q932 332 952 102 L970 102"/>
+        <path class="pipe" d="M835 332 L900 332 Q932 332 952 102 L970 102" stroke="#0fa77c" marker-end="url(#arrow-teal)"/>
+        <path class="ghost" d="M835 344 L900 344 Q932 344 952 218 L970 218"/>
+        <path class="pipe" d="M835 344 L900 344 Q932 344 952 218 L970 218" stroke="#2387df" marker-end="url(#arrow-blue)"/>
+        <path class="ghost" d="M835 356 L970 356"/>
+        <path class="pipe" d="M835 356 L970 356" stroke="#bf760d" marker-end="url(#arrow-amber)"/>
+        <path class="ghost" d="M835 368 L900 368 Q932 368 952 488 L970 488"/>
+        <path class="pipe" d="M835 368 L900 368 Q932 368 952 488 L970 488" stroke="#7d72f2" marker-end="url(#arrow-violet)"/>
+        <path class="ghost" d="M835 380 L900 380 Q932 380 952 602 L970 602"/>
+        <path class="pipe" d="M835 380 L900 380 Q932 380 952 602 L970 602" stroke="#e1633a" marker-end="url(#arrow-coral)"/>
+      </svg>
+
+      <article class="card source teal" style="left:32px; top:34px;">
+        <span class="title">Sản lượng + lương CN khai thác</span>
+        <ul>
+          <li>KH sản lượng năm</li>
+          <li>Sản lượng mủ tươi Chấm công</li>
+          <li>3 Appsheet nhập sản lượng mủ</li>
+        </ul>
+        <span class="chip">Tuần + Tháng</span>
+      </article>
+
+      <article class="card mini teal" style="left:330px; top:42px;">Báo cáo trực tiếp<br>trên Appsheet</article>
+      <article class="card mini teal" style="left:330px; top:106px;">Googlesheet</article>
+
+      <article class="card source blue" style="left:32px; top:188px;">
+        <span class="title">Tiến độ + lương CN CSVC</span>
+        <ul>
+          <li>KH chăm sóc vườn cây</li>
+          <li>Phân bổ hạng mục - định mức công việc</li>
+          <li>Appsheet nghiệm thu</li>
+          <li>Appsheet phúc tra</li>
+        </ul>
+        <span class="chip">Hàng tháng</span>
+      </article>
+
+      <article class="card source amber" style="left:32px; top:336px;">
+        <span class="title">Lương công nhân nhà máy</span>
+        <ul>
+          <li>Googlesheet nghiệp vụ</li>
+          <li>Dữ liệu chấm công</li>
+        </ul>
+        <span class="chip">Hàng tháng</span>
+      </article>
+
+      <article class="card source tall violet" style="left:32px; top:490px;">
+        <span class="title">Bài toán truy xuất nguồn gốc</span>
+        <ul>
+          <li>Base Platform</li>
+          <li>Xác định 4 mã</li>
+          <li>A: Giao nhận</li>
+          <li>B: Chế biến</li>
+          <li>C: Lô SX</li>
+          <li>D: Đơn hàng</li>
+        </ul>
+        <span class="chip">Theo lô</span>
+      </article>
+
+      <div class="hub">
+        <div>Big Query<small>Kho dữ liệu trung tâm</small></div>
+      </div>
+
+      <article class="card out teal" style="left:970px; top:52px;">
+        <span class="title">Sản lượng</span>
+        <ul>
+          <li>GS: Bảng lương tự động</li>
+          <li>BC sản lượng + năng suất + Lương CN</li>
+        </ul>
+      </article>
+
+      <article class="card out blue" style="left:970px; top:168px;">
+        <span class="title">Tiến độ CSVC</span>
+        <ul>
+          <li>Biểu mẫu xác nhận nghiệm thu + phúc tra (tự động)</li>
+          <li>Bảng lương CN CSVC</li>
+          <li>BC tiến độ KH vườn cây</li>
+        </ul>
+      </article>
+
+      <article class="card out amber" style="left:970px; top:306px;">
+        <span class="title">Lương nhà máy</span>
+        <ul>
+          <li>BC lương CN nhà máy</li>
+          <li>BC hiệu quả sản xuất KD</li>
+        </ul>
+      </article>
+
+      <article class="card out violet" style="left:970px; top:438px;">
+        <span class="title">Truy xuất</span>
+        <ul>
+          <li>WEB truy xuất theo mã đơn hàng</li>
+          <li>BC quản trị kho</li>
+        </ul>
+      </article>
+
+      <article class="card out coral" style="left:970px; top:552px;">
+        <span class="title">BC Tập đoàn</span>
+        <ul>
+          <li>Báo cáo thông minh &amp; biểu mẫu cho Tập đoàn</li>
+          <li>Tổng hợp từ toàn bộ domain</li>
+        </ul>
+        <span class="tag">Nhánh riêng biệt</span>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
