@@ -1,381 +1,770 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Data Flow Pipeline</title>
-  <style>
-    :root {
-      --bg: #fbfaf7;
-      --ink: #15202b;
-      --line-bg: rgba(150, 160, 168, .16);
-      --teal: #0fa77c;
-      --teal-soft: #e2f7f0;
-      --blue: #2387df;
-      --blue-soft: #e5f2ff;
-      --amber: #bf760d;
-      --amber-soft: #fff0d9;
-      --violet: #7d72f2;
-      --violet-soft: #eeecff;
-      --coral: #e1633a;
-      --coral-soft: #fff1ec;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Data Flow — Công ty TNHH MTV Cao su Chư Sê</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#f3f5f2;font-family:'Be Vietnam Pro',Arial,sans-serif;color:#111}
+body{overflow-x:hidden}
 
-    * { box-sizing: border-box; }
+/* HEADER */
+.apphdr{background:linear-gradient(135deg,#1c4a34,#0f3324);padding:16px 32px;display:flex;align-items:center;gap:14px}
+.apphdr .logo{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.apphdr h1{color:#fff;font-size:16px;font-weight:800;letter-spacing:0;line-height:1.25;overflow-wrap:anywhere}
+.apphdr .hsub{color:#a9c9b8;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-top:3px;line-height:1.35;overflow-wrap:anywhere}
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-    }
+/* NAV */
+.mainnav{background:#fff;border-bottom:1px solid #e2e6de;display:flex;padding:0 24px;overflow-x:auto;scrollbar-width:thin}
+.mainnav a{display:flex;align-items:center;gap:7px;padding:13px 18px;font-size:12.5px;font-weight:700;color:#8a8f86;cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap;transition:all .13s}
+.mainnav a:hover{color:#333;background:#fafbf8}
+.mainnav a.on{color:#177049;border-bottom-color:#2fa876;background:#f3faf6}
+.crumb{padding:14px 32px 4px;font-size:13px;font-weight:700;color:#333;display:flex;align-items:center;gap:7px}
 
-    .wrap {
-      width: min(100vw, 1400px);
-      overflow: auto;
-      padding: 20px;
-    }
+.page{padding:14px 32px 44px;max-width:1520px;margin:0 auto}
+.pagewrap{display:none}.pagewrap.on{display:block;animation:fadein .18s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 
-    .flow {
-      position: relative;
-      width: 1320px;
-      height: 700px;
-      margin: 0 auto;
-      background:
-        radial-gradient(circle, rgba(180, 190, 196, .18) 1px, transparent 1.2px) 0 0 / 12px 12px;
-    }
+/* QUICK PILLS */
+.pillrow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:14px 0 18px}
+.pill2{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:20px;border:1.5px solid;background:#fff;font-size:11.5px;font-weight:700;cursor:pointer;transition:all .12s;line-height:1.35;max-width:100%;overflow-wrap:anywhere}
+.pill2:hover{filter:brightness(0.97);transform:translateY(-1px)}
+.pill2 .dotc{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pill2 .cd{font-weight:500;opacity:.65;margin-left:2px}
 
-    svg {
-      position: absolute;
-      inset: 0;
-      width: 1320px;
-      height: 700px;
-      pointer-events: none;
-      overflow: visible;
-      z-index: 1;
-    }
+/* HUB (overview) */
+.hubwrap{background:#fff;border:1px solid #e2e6de;border-radius:16px;padding:14px 4px 4px;overflow-x:auto;scrollbar-width:thin}
+#hubsvg{width:100%;min-width:1180px;height:auto;display:block}
+.hub-node{cursor:pointer}
+.hub-node rect{transition:filter .12s}
+.hub-node:hover rect{filter:brightness(0.98)}
+.legend{padding:10px 20px;background:#f7faf5;border-top:1px solid #e2e6de;display:flex;align-items:center;gap:16px;flex-wrap:wrap;border-radius:0 0 14px 14px}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#555}
+.leg-sw{width:12px;height:3px;border-radius:2px;flex-shrink:0}
 
-    .ghost,
-    .pipe {
-      fill: none;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
+/* BT DETAIL PAGE */
+.bthdr{border-radius:10px;padding:10px 18px;color:#fff;font-weight:800;font-size:13px;letter-spacing:0;margin-bottom:14px;display:flex;align-items:center;gap:10px;line-height:1.35;overflow-wrap:anywhere}
+.collabels{display:grid;grid-template-columns:0.85fr 0.7fr 0.8fr 0.9fr 1fr;gap:10px;margin-bottom:8px}
+.collabels div{text-align:center;padding:8px;border-radius:8px;background:#eafaf5;color:#177049;font-size:11px;font-weight:800;letter-spacing:.05em}
+.flowcard{background:#fff;border:1px solid #e2e6de;border-radius:16px;padding:16px 6px;overflow-x:auto;scrollbar-width:thin}
+.flowsvg{width:100%;min-width:1120px;height:auto;display:block}
+.notebar{margin-top:14px;padding:10px 16px;border-radius:8px;background:#fff8e0;border:1px solid #e0c060;font-size:11.5px;color:#7a6420}
 
-    .ghost {
-      stroke: var(--line-bg);
-      stroke-width: 9;
-    }
-
-    .pipe {
-      stroke-width: 3;
-      stroke-dasharray: 8 7;
-      animation: move 1.5s linear infinite;
-    }
-
-    @keyframes move {
-      to { stroke-dashoffset: -30; }
-    }
-
-    .card,
-    .hub {
-      position: absolute;
-      z-index: 2;
-    }
-
-    .card {
-      border: 1px solid;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, .78);
-      box-shadow:
-        0 14px 30px rgba(30, 38, 45, .05),
-        inset 0 1px 0 rgba(255, 255, 255, .65);
-      font-size: 11px;
-      line-height: 1.28;
-      font-weight: 720;
-    }
-
-    .source {
-      width: 250px;
-      min-height: 112px;
-      padding: 10px 12px 30px;
-    }
-
-    .source.tall {
-      min-height: 154px;
-    }
-
-    .mini {
-      width: 150px;
-      min-height: 46px;
-      padding: 9px 10px;
-      display: grid;
-      place-items: center;
-      text-align: center;
-      font-size: 10.5px;
-      line-height: 1.25;
-      font-weight: 820;
-    }
-
-    .out {
-      width: 310px;
-      min-height: 92px;
-      padding: 11px 13px;
-    }
-
-    .title {
-      display: block;
-      margin-bottom: 7px;
-      text-align: center;
-      font-size: 11px;
-      line-height: 1.2;
-      font-weight: 850;
-    }
-
-    .out .title {
-      padding-bottom: 7px;
-      border-bottom: 1px solid currentColor;
-    }
-
-    ul {
-      margin: 0;
-      padding-left: 16px;
-      text-align: left;
-    }
-
-    li {
-      margin: 2px 0;
-      padding-left: 1px;
-    }
-
-    .chip,
-    .tag {
-      display: inline-grid;
-      place-items: center;
-      border-radius: 999px;
-      border: 1px solid currentColor;
-      background: rgba(255, 255, 255, .42);
-      font-size: 10px;
-      line-height: 1;
-      font-weight: 850;
-    }
-
-    .chip {
-      position: absolute;
-      left: 13px;
-      right: 13px;
-      bottom: 8px;
-      height: 18px;
-    }
-
-    .tag {
-      min-height: 18px;
-      margin-top: 7px;
-      padding: 0 9px;
-    }
-
-    .hub {
-      left: 585px;
-      top: 304px;
-      width: 250px;
-      height: 92px;
-      display: grid;
-      place-items: center;
-      text-align: center;
-      border-radius: 999px / 50%;
-      color: #05745f;
-      border: 1.5px solid var(--teal);
-      background: #e2f8f1;
-      box-shadow:
-        0 0 0 9px rgba(15, 167, 124, .08),
-        0 18px 34px rgba(6, 75, 62, .08);
-      font-size: 18px;
-      font-weight: 900;
-    }
-
-    .hub small {
-      display: block;
-      margin-top: 6px;
-      font-size: 11px;
-      line-height: 1.2;
-      color: #076b58;
-      font-weight: 760;
-    }
-
-    .teal {
-      color: #075f4e;
-      border-color: rgba(15, 167, 124, .42);
-      background: var(--teal-soft);
-    }
-
-    .blue {
-      color: #155d9f;
-      border-color: rgba(35, 135, 223, .38);
-      background: var(--blue-soft);
-    }
-
-    .amber {
-      color: #704006;
-      border-color: rgba(191, 118, 13, .38);
-      background: var(--amber-soft);
-    }
-
-    .violet {
-      color: #3d36a0;
-      border-color: rgba(125, 114, 242, .38);
-      background: var(--violet-soft);
-    }
-
-    .coral {
-      color: #8d321b;
-      border-color: rgba(225, 99, 58, .56);
-      background: var(--coral-soft);
-    }
-  </style>
+/* DATA MART DETAIL */
+.martdetail{margin-top:18px}
+.martdetail-hd{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.martdetail-hd .mdtag{color:#fff;font-size:10px;font-weight:800;padding:4px 12px;border-radius:20px;letter-spacing:.04em}
+.martdetail-hd .mdttl{font-size:14px;font-weight:800;color:#111}
+.martdetail-hd .mdsub{font-size:11px;color:#888;margin-top:1px}
+.martgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:14px}
+.mtcard{border-radius:12px;overflow:hidden;background:#fff;border:1.4px solid #ddd}
+.mtcard.fact{border-width:1.6px}
+.mtcard-hd{padding:9px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;border-bottom:1px solid #eee}
+.mtcard-hd .mtname{font-family:'Courier New',monospace;font-size:12.5px;font-weight:700;color:#111;overflow-wrap:anywhere}
+.mtcard-hd .mtdesc{font-size:9.5px;color:#777;margin-top:2px}
+.mtcard-hd .mtbadge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;color:#fff;flex-shrink:0}
+.mttable{width:100%;border-collapse:collapse;font-size:10.5px;font-family:'Courier New',monospace}
+.mttable th{text-align:left;padding:5px 12px;font-weight:700;font-size:9.5px}
+.mttable td{padding:4px 12px;border-top:1px solid #f0f0f0;color:#333}
+.mttable td.pk{font-weight:700}
+.mttable td.tp{color:#999;font-family:'Courier New',monospace}
+.mttable td.ds{color:#666;font-family:'Be Vietnam Pro',sans-serif;font-size:10px}
+.mtdimtitle{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#999;margin:16px 0 8px}
+@media (max-width:760px){
+  .apphdr{padding:14px 16px;align-items:flex-start}
+  .apphdr h1{font-size:14px}
+  .apphdr .hsub{font-size:9px}
+  .mainnav{padding:0 10px}
+  .mainnav a{padding:12px 12px;font-size:11.5px}
+  .crumb{padding:12px 16px 0;font-size:12px}
+  .page{padding:12px 12px 32px}
+  .pillrow{justify-content:flex-start}
+  .pill2{width:100%;justify-content:flex-start;border-radius:12px}
+  .collabels{grid-template-columns:repeat(5,minmax(92px,1fr));overflow-x:auto}
+  .martdetail-hd{align-items:flex-start;flex-wrap:wrap}
+  .mttable{min-width:560px}
+  .mtcard{overflow-x:auto}
+}
+</style>
 </head>
 <body>
-  <main class="wrap">
-    <section class="flow" aria-label="Sơ đồ data flow ngang">
-      <svg viewBox="0 0 1320 700" aria-hidden="true">
-        <defs>
-          <marker id="arrow-teal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M2 1 L8 5 L2 9" fill="none" stroke="#0fa77c" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-          </marker>
-          <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M2 1 L8 5 L2 9" fill="none" stroke="#2387df" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-          </marker>
-          <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M2 1 L8 5 L2 9" fill="none" stroke="#bf760d" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-          </marker>
-          <marker id="arrow-violet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M2 1 L8 5 L2 9" fill="none" stroke="#7d72f2" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-          </marker>
-          <marker id="arrow-coral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M2 1 L8 5 L2 9" fill="none" stroke="#e1633a" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-          </marker>
-        </defs>
 
-        <path class="ghost" d="M282 86 L306 86 Q318 86 328 69 L330 69"/>
-        <path class="pipe" d="M282 86 L306 86 Q318 86 328 69 L330 69" stroke="#0fa77c" marker-end="url(#arrow-teal)"/>
-        <path class="ghost" d="M282 86 L306 86 Q318 86 328 130 L330 130"/>
-        <path class="pipe" d="M282 86 L306 86 Q318 86 328 130 L330 130" stroke="#0fa77c" marker-end="url(#arrow-teal)"/>
-        <path class="ghost" d="M480 130 L522 130 Q548 130 560 156 L636 306"/>
-        <path class="pipe" d="M480 130 L522 130 Q548 130 560 156 L636 306" stroke="#0fa77c" marker-end="url(#arrow-teal)"/>
+<div class="apphdr">
+  <div class="logo">🌱</div>
+  <div>
+    <h1>CÔNG TY TNHH MTV CAO SU CHƯ SÊ</h1>
+    <div class="hsub">Data Flow — Sơ đồ luồng dữ liệu &amp; công thức tính lương</div>
+  </div>
+</div>
 
-        <path class="ghost" d="M282 240 L362 240 Q410 240 448 264 L604 330"/>
-        <path class="pipe" d="M282 240 L362 240 Q410 240 448 264 L604 330" stroke="#2387df" marker-end="url(#arrow-blue)"/>
-        <path class="ghost" d="M282 380 L362 380 Q410 380 448 362 L604 360"/>
-        <path class="pipe" d="M282 380 L362 380 Q410 380 448 362 L604 360" stroke="#bf760d" marker-end="url(#arrow-amber)"/>
-        <path class="ghost" d="M282 548 L362 548 Q410 548 448 512 L604 382"/>
-        <path class="pipe" d="M282 548 L362 548 Q410 548 448 512 L604 382" stroke="#7d72f2" marker-end="url(#arrow-violet)"/>
+<div class="mainnav" id="mainnav">
+  <a class="on" onclick="switchPage('overview',this)">📖 Tổng quan</a>
+  <a onclick="switchPage('bt1',this)">🌿 BT1 Khai thác</a>
+  <a onclick="switchPage('bt2',this)">🌳 BT2 Vườn cây</a>
+  <a onclick="switchPage('bt3',this)">🏭 BT3 Nhà máy</a>
+  <a onclick="switchPage('bt4',this)">🔗 BT4 Nguồn gốc</a>
+</div>
+<div class="crumb" id="crumb">📖 Tổng quan</div>
 
-        <path class="ghost" d="M835 332 L900 332 Q932 332 952 102 L970 102"/>
-        <path class="pipe" d="M835 332 L900 332 Q932 332 952 102 L970 102" stroke="#0fa77c" marker-end="url(#arrow-teal)"/>
-        <path class="ghost" d="M835 344 L900 344 Q932 344 952 218 L970 218"/>
-        <path class="pipe" d="M835 344 L900 344 Q932 344 952 218 L970 218" stroke="#2387df" marker-end="url(#arrow-blue)"/>
-        <path class="ghost" d="M835 356 L970 356"/>
-        <path class="pipe" d="M835 356 L970 356" stroke="#bf760d" marker-end="url(#arrow-amber)"/>
-        <path class="ghost" d="M835 368 L900 368 Q932 368 952 488 L970 488"/>
-        <path class="pipe" d="M835 368 L900 368 Q932 368 952 488 L970 488" stroke="#7d72f2" marker-end="url(#arrow-violet)"/>
-        <path class="ghost" d="M835 380 L900 380 Q932 380 952 602 L970 602"/>
-        <path class="pipe" d="M835 380 L900 380 Q932 380 952 602 L970 602" stroke="#e1633a" marker-end="url(#arrow-coral)"/>
-      </svg>
+<div class="page">
 
-      <article class="card source teal" style="left:32px; top:34px;">
-        <span class="title">Sản lượng + lương CN khai thác</span>
-        <ul>
-          <li>KH sản lượng năm</li>
-          <li>Sản lượng mủ tươi Chấm công</li>
-          <li>3 Appsheet nhập sản lượng mủ</li>
-        </ul>
-        <span class="chip">Tuần + Tháng</span>
-      </article>
+<!-- ═══════════ PAGE: TỔNG QUAN ═══════════ -->
+<div class="pagewrap on" id="page-overview">
+<div class="pillrow">
+  <div class="pill2" style="border-color:#2fa876;color:#177049" onclick="switchPage('bt1', mnav(1))"><span class="dotc" style="background:#2fa876"></span>BT1 – Sản lượng khai thác <span class="cd">→ Chi tiết</span></div>
+  <div class="pill2" style="border-color:#3d6ef5;color:#1e4bc0" onclick="switchPage('bt2', mnav(2))"><span class="dotc" style="background:#3d6ef5"></span>BT2 – Tiến độ &amp; Lương CSVC <span class="cd">→ Chi tiết</span></div>
+  <div class="pill2" style="border-color:#c0781a;color:#9a5c0e" onclick="switchPage('bt3', mnav(3))"><span class="dotc" style="background:#c0781a"></span>BT3 – Lương nhà máy <span class="cd">→ Chi tiết</span></div>
+  <div class="pill2" style="border-color:#8060e0;color:#5834b0" onclick="switchPage('bt4', mnav(4))"><span class="dotc" style="background:#8060e0"></span>BT4 – Truy xuất nguồn gốc <span class="cd">→ Chi tiết</span></div>
+</div>
 
-      <article class="card mini teal" style="left:330px; top:42px;">Báo cáo trực tiếp<br>trên Appsheet</article>
-      <article class="card mini teal" style="left:330px; top:106px;">Googlesheet</article>
+<div class="hubwrap">
+<svg id="hubsvg" viewBox="0 0 1500 780" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <marker id="ah-gr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="#2fa876" stroke-width="1.8"/></marker>
+  <marker id="ah-bl" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="#3d6ef5" stroke-width="1.8"/></marker>
+  <marker id="ah-or" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="#c0781a" stroke-width="1.8"/></marker>
+  <marker id="ah-pu" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="#8060e0" stroke-width="1.8"/></marker>
+  <marker id="ah-gy" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="#999" stroke-width="1.8"/></marker>
+  <marker id="ah-lake" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="#2060c0" stroke-width="1.8"/></marker>
+  <marker id="ah-etl" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="#e8440a" stroke-width="1.8"/></marker>
+</defs>
+<style>
+.flow{fill:none;stroke-width:2.2;stroke-dasharray:6 6;animation:dashmove 1.4s linear infinite}
+@keyframes dashmove{to{stroke-dashoffset:-24}}
+.gr{stroke:#2fa876}.bl{stroke:#3d6ef5}.or{stroke:#c0781a}.pu{stroke:#8060e0}.lk{stroke:#2060c0}.etl{stroke:#e8440a}
+.nb{stroke-width:1.6;rx:12}
+text{font-family:'Be Vietnam Pro',Arial,sans-serif}
+.ttl{font-weight:800;font-size:13.8px;fill:#111}
+.bul{font-size:11px;fill:#444}
+.pill{font-size:10px;font-weight:700}
+.stg{font-size:9.5px;font-weight:700;letter-spacing:.08em;fill:#aaa}
+</style>
 
-      <article class="card source blue" style="left:32px; top:188px;">
-        <span class="title">Tiến độ + lương CN CSVC</span>
-        <ul>
-          <li>KH chăm sóc vườn cây</li>
-          <li>Phân bổ hạng mục - định mức công việc</li>
-          <li>Appsheet nghiệm thu</li>
-          <li>Appsheet phúc tra</li>
-        </ul>
-        <span class="chip">Hàng tháng</span>
-      </article>
+<!-- connectors: sources -> Data Lake -->
+<path class="flow gr" marker-end="url(#ah-lake)" d="M348,163 C376,163 370,300 390,352"/>
+<path class="flow bl" marker-end="url(#ah-lake)" d="M348,322 C376,322 370,370 390,388"/>
+<path class="flow or" marker-end="url(#ah-lake)" d="M348,455 C376,455 370,420 390,415"/>
+<path class="flow pu" marker-end="url(#ah-lake)" d="M348,626 C380,626 380,460 390,450"/>
 
-      <article class="card source amber" style="left:32px; top:336px;">
-        <span class="title">Lương công nhân nhà máy</span>
-        <ul>
-          <li>Googlesheet nghiệp vụ</li>
-          <li>Dữ liệu chấm công</li>
-        </ul>
-        <span class="chip">Hàng tháng</span>
-      </article>
+<!-- Data Lake -> ETL -> Data Warehouse -->
+<path class="flow etl" marker-end="url(#ah-etl)" d="M560,403 L598,403"/>
 
-      <article class="card source tall violet" style="left:32px; top:490px;">
-        <span class="title">Bài toán truy xuất nguồn gốc</span>
-        <ul>
-          <li>Base Platform</li>
-          <li>Xác định 4 mã</li>
-          <li>A: Giao nhận</li>
-          <li>B: Chế biến</li>
-          <li>C: Lô SX</li>
-          <li>D: Đơn hàng</li>
-        </ul>
-        <span class="chip">Theo lô</span>
-      </article>
+<!-- Data Warehouse -> 4 Data Marts -->
+<path class="flow gr" marker-end="url(#ah-gr)" d="M770,380 C782,350 785,180 800,150"/>
+<path class="flow bl" marker-end="url(#ah-bl)" d="M770,395 C782,360 785,300 800,283"/>
+<path class="flow or" marker-end="url(#ah-or)" d="M770,410 C782,412 785,408 800,407"/>
+<path class="flow pu" marker-end="url(#ah-pu)" d="M770,425 C782,460 785,500 800,519"/>
 
-      <div class="hub">
-        <div>Big Query<small>Kho dữ liệu trung tâm</small></div>
-      </div>
+<!-- Data Marts -> outputs -->
+<path class="flow gr" marker-end="url(#ah-gr)" d="M1050,147 L1110,147"/>
+<path class="flow bl" marker-end="url(#ah-bl)" d="M1050,281 L1110,281"/>
+<path class="flow or" marker-end="url(#ah-or)" d="M1050,407 L1110,407"/>
+<path class="flow pu" marker-end="url(#ah-pu)" d="M1050,519 L1110,519"/>
 
-      <article class="card out teal" style="left:970px; top:52px;">
-        <span class="title">Sản lượng</span>
-        <ul>
-          <li>GS: Bảng lương tự động</li>
-          <li>BC sản lượng + năng suất + Lương CN</li>
-        </ul>
-      </article>
+<!-- SOURCE 1 GREEN -->
+<g class="hub-node" onclick="switchPage('bt1', mnav(1))">
+<rect class="nb" x="98" y="88" width="250" height="150" fill="#eefaf3" stroke="#2fa876"/>
+<text x="223" y="106" text-anchor="middle" class="ttl" fill="#177049">Sản lượng + lương CN khai thác</text>
+<text x="114" y="124" class="bul">•  KH sản lượng năm</text>
+<text x="114" y="140" class="bul">•  Sản lượng mủ tươi · Chấm công</text>
+<text x="114" y="156" class="bul" font-weight="700">•  3 AppSheet vận hành</text>
+<text x="128" y="171" class="bul">–  Ghi nhận mủ · DRC · Quy khô</text>
+<text x="128" y="187" class="bul" font-weight="700" fill="#177049">Cắm dữ liệu vào Data Lake</text>
+<rect x="140" y="213" width="166" height="20" rx="10" fill="#fff" stroke="#2fa876"/>
+<text x="223" y="227" text-anchor="middle" class="pill" fill="#177049">Tuần + Tháng</text>
+</g>
 
-      <article class="card out blue" style="left:970px; top:168px;">
-        <span class="title">Tiến độ CSVC</span>
-        <ul>
-          <li>Biểu mẫu xác nhận nghiệm thu + phúc tra (tự động)</li>
-          <li>Bảng lương CN CSVC</li>
-          <li>BC tiến độ KH vườn cây</li>
-        </ul>
-      </article>
+<!-- SOURCE 2 BLUE -->
+<g class="hub-node" onclick="switchPage('bt2', mnav(2))">
+<rect class="nb" x="98" y="248" width="250" height="148" fill="#eef3ff" stroke="#3d6ef5"/>
+<text x="223" y="268" text-anchor="middle" class="ttl" fill="#1e4bc0">Tiến độ + lương CN CSVC</text>
+<text x="114" y="288" class="bul">•  KH chăm sóc vườn cây</text>
+<text x="114" y="304" class="bul">•  Phân bổ hạng mục — định mức</text>
+<text x="114" y="320" class="bul">•  Appsheet nghiệm thu</text>
+<text x="114" y="336" class="bul">•  Appsheet phúc tra</text>
+<rect x="150" y="368" width="146" height="20" rx="10" fill="#fff" stroke="#3d6ef5"/>
+<text x="223" y="382" text-anchor="middle" class="pill" fill="#1e4bc0">Hàng tháng</text>
+</g>
 
-      <article class="card out amber" style="left:970px; top:306px;">
-        <span class="title">Lương nhà máy</span>
-        <ul>
-          <li>BC lương CN nhà máy</li>
-          <li>BC hiệu quả sản xuất KD</li>
-        </ul>
-      </article>
+<!-- SOURCE 3 ORANGE -->
+<g class="hub-node" onclick="switchPage('bt3', mnav(3))">
+<rect class="nb" x="98" y="410" width="250" height="90" fill="#fff6ea" stroke="#c0781a"/>
+<text x="223" y="430" text-anchor="middle" class="ttl" fill="#9a5c0e">Lương công nhân nhà máy</text>
+<text x="114" y="450" class="bul">•  Googlesheet nghiệp vụ</text>
+<text x="114" y="466" class="bul">•  Dữ liệu chấm công</text>
+<rect x="150" y="478" width="146" height="20" rx="10" fill="#fff" stroke="#c0781a"/>
+<text x="223" y="492" text-anchor="middle" class="pill" fill="#9a5c0e">Hàng tháng</text>
+</g>
 
-      <article class="card out violet" style="left:970px; top:438px;">
-        <span class="title">Truy xuất</span>
-        <ul>
-          <li>WEB truy xuất theo mã đơn hàng</li>
-          <li>BC quản trị kho</li>
-        </ul>
-      </article>
+<!-- SOURCE 4 PURPLE -->
+<g class="hub-node" onclick="switchPage('bt4', mnav(4))">
+<rect class="nb" x="98" y="546" width="250" height="160" fill="#f5f1ff" stroke="#8060e0"/>
+<text x="223" y="566" text-anchor="middle" class="ttl" fill="#5834b0">Bài toán truy xuất nguồn gốc</text>
+<text x="114" y="586" class="bul">•  Base Platform</text>
+<text x="114" y="602" class="bul">•  Xác định 4 mã</text>
+<text x="126" y="618" class="bul">A: Giao nhận</text>
+<text x="126" y="634" class="bul">B: Chế biến</text>
+<text x="126" y="650" class="bul">C: Lô SX</text>
+<text x="126" y="666" class="bul">D: Đơn hàng</text>
+<rect x="160" y="678" width="126" height="20" rx="10" fill="#fff" stroke="#8060e0"/>
+<text x="223" y="692" text-anchor="middle" class="pill" fill="#5834b0">Theo lô</text>
+</g>
 
-      <article class="card out coral" style="left:970px; top:552px;">
-        <span class="title">BC Tập đoàn</span>
-        <ul>
-          <li>Báo cáo thông minh &amp; biểu mẫu cho Tập đoàn</li>
-          <li>Tổng hợp từ toàn bộ domain</li>
-        </ul>
-        <span class="tag">Nhánh riêng biệt</span>
-      </article>
-    </section>
-  </main>
+<!-- DATA LAKE -->
+<g class="hub-node">
+<rect class="nb" x="390" y="290" width="170" height="226" fill="#eef3fc" stroke="#2060c0"/>
+<text x="475" y="314" text-anchor="middle" class="ttl" fill="#123d78" font-size="14">Data Lake</text>
+<text x="475" y="332" text-anchor="middle" class="pill" fill="#2060c0" font-size="10">Google BigQuery</text>
+<line x1="407" y1="342" x2="543" y2="342" stroke="#c8d8ee"/>
+<text x="408" y="361" class="bul" font-size="10.6">•  Raw · immutable</text>
+<text x="408" y="379" class="bul" font-size="10.6">•  Toàn bộ dữ liệu thô</text>
+<text x="421" y="396" class="bul" font-size="10.6">của 4 bài toán</text>
+<text x="408" y="415" class="bul" font-size="10.6">•  AppSheet · Google Sheet</text>
+<text x="421" y="432" class="bul" font-size="10.6">Base Platform</text>
+<text x="408" y="451" class="bul" font-size="10.6">•  Lưu vĩnh viễn</text>
+<rect x="421" y="480" width="108" height="22" rx="11" fill="#fff" stroke="#2060c0"/>
+<text x="475" y="495" text-anchor="middle" class="pill" fill="#123d78" font-size="9.6">Batch/Realtime</text>
+</g>
+<text x="579" y="393" text-anchor="middle" font-size="10.5" font-weight="800" fill="#e8440a">ETL</text>
+
+<!-- DATA WAREHOUSE -->
+<g class="hub-node">
+<rect class="nb" x="600" y="290" width="170" height="226" fill="#eefaf1" stroke="#1a6020"/>
+<text x="685" y="314" text-anchor="middle" class="ttl" fill="#164d1a" font-size="13.5">Data Warehouse</text>
+<text x="685" y="332" text-anchor="middle" class="pill" fill="#1a6020" font-size="10">SQL · chuẩn hóa</text>
+<line x1="617" y1="342" x2="753" y2="342" stroke="#c8e4cc"/>
+<text x="618" y="361" class="bul" font-size="10.4">•  Chuẩn hóa theo lô, đội,</text>
+<text x="631" y="378" class="bul" font-size="10.4">công nhân, thời gian</text>
+<text x="618" y="397" class="bul" font-size="10.4">•  Áp dụng công thức</text>
+<text x="631" y="414" class="bul" font-size="10.4">tính lương chuẩn hóa</text>
+<text x="618" y="433" class="bul" font-size="10.4">•  Nguồn chuẩn cho</text>
+<text x="631" y="450" class="bul" font-size="10.4">4 Data Mart</text>
+<rect x="630" y="480" width="110" height="22" rx="11" fill="#fff" stroke="#1a6020"/>
+<text x="685" y="495" text-anchor="middle" class="pill" fill="#164d1a" font-size="9.6">Dataform · SQL</text>
+</g>
+
+<!-- DATA MART 1 GREEN -->
+<g class="hub-node" onclick="switchPage('bt1', mnav(1))">
+<rect class="nb" x="800" y="98" width="250" height="98" fill="#eefaf3" stroke="#2fa876"/>
+<text x="925" y="119" text-anchor="middle" class="ttl" fill="#177049" font-size="12">Data Mart 1 — BigQuery</text>
+<text x="925" y="136" text-anchor="middle" class="pill" fill="#177049" font-size="9.5">Sản lượng &amp; Lương khai thác</text>
+<text x="815" y="153" class="bul" font-size="9">•  fact_san_luong_khai_thac</text>
+<text x="815" y="167" class="bul" font-size="9">•  fact_luong_khai_thac</text>
+<text x="815" y="181" class="bul" font-size="9">•  dim_cong_nhan · dim_lo · dim_doi</text>
+</g>
+
+<!-- DATA MART 2 BLUE -->
+<g class="hub-node" onclick="switchPage('bt2', mnav(2))">
+<rect class="nb" x="800" y="222" width="250" height="118" fill="#eef3ff" stroke="#3d6ef5"/>
+<text x="925" y="243" text-anchor="middle" class="ttl" fill="#1e4bc0" font-size="12">Data Mart 2 — BigQuery</text>
+<text x="925" y="260" text-anchor="middle" class="pill" fill="#1e4bc0" font-size="9.5">Tiến độ &amp; Lương CSVC</text>
+<text x="815" y="277" class="bul" font-size="9">•  fact_tien_do_csvc</text>
+<text x="815" y="291" class="bul" font-size="9">•  fact_luong_csvc</text>
+<text x="815" y="305" class="bul" font-size="9">•  dim_hang_muc · dim_lo · dim_doi</text>
+<text x="815" y="319" class="bul" font-size="9">•  dim_cong_nhan</text>
+</g>
+
+<!-- DATA MART 3 ORANGE -->
+<g class="hub-node" onclick="switchPage('bt3', mnav(3))">
+<rect class="nb" x="800" y="362" width="250" height="90" fill="#fff6ea" stroke="#c0781a"/>
+<text x="925" y="383" text-anchor="middle" class="ttl" fill="#9a5c0e" font-size="12">Data Mart 3 — BigQuery</text>
+<text x="925" y="400" text-anchor="middle" class="pill" fill="#9a5c0e" font-size="9.5">Lương nhà máy</text>
+<text x="815" y="417" class="bul" font-size="9">•  fact_san_xuat_nha_may</text>
+<text x="815" y="431" class="bul" font-size="9">•  fact_luong_nha_may · dim_ca_sx</text>
+</g>
+
+<!-- DATA MART 4 PURPLE -->
+<g class="hub-node" onclick="switchPage('bt4', mnav(4))">
+<rect class="nb" x="800" y="474" width="250" height="90" fill="#f5f1ff" stroke="#8060e0"/>
+<text x="925" y="495" text-anchor="middle" class="ttl" fill="#5834b0" font-size="12">Data Mart 4 — BigQuery</text>
+<text x="925" y="512" text-anchor="middle" class="pill" fill="#5834b0" font-size="9.5">Truy xuất nguồn gốc</text>
+<text x="815" y="529" class="bul" font-size="9">•  fact_giao_nhan → chế_biến → lô_sx → đơn_hàng</text>
+<text x="815" y="543" class="bul" font-size="9">•  dim_kho · dim_khach_hang</text>
+</g>
+
+<!-- OUTPUT 1 GREEN -->
+<g class="hub-node" onclick="switchPage('bt1', mnav(1))">
+<rect class="nb" x="1110" y="98" width="310" height="116" fill="#fff" stroke="#2fa876"/>
+<line x1="1126" y1="128" x2="1404" y2="128" stroke="#2fa876" stroke-width="1.4"/>
+<text x="1265" y="120" text-anchor="middle" font-weight="800" font-size="13" fill="#177049">Sản lượng</text>
+<text x="1126" y="145" class="bul">•  GS: Bảng lương tự động</text>
+<text x="1126" y="165" class="bul">•  BC sản lượng + năng suất</text>
+<text x="1136" y="183" class="bul">+ lương CN khai thác</text>
+</g>
+
+<!-- OUTPUT 2 BLUE -->
+<g class="hub-node" onclick="switchPage('bt2', mnav(2))">
+<rect class="nb" x="1110" y="222" width="310" height="118" fill="#fff" stroke="#3d6ef5"/>
+<line x1="1126" y1="252" x2="1404" y2="252" stroke="#3d6ef5" stroke-width="1.4"/>
+<text x="1265" y="244" text-anchor="middle" font-weight="800" font-size="13" fill="#1e4bc0">Tiến độ CSVC</text>
+<text x="1126" y="269" class="bul">•  Biểu mẫu xác nhận nghiệm thu</text>
+<text x="1136" y="285" class="bul">+ phúc tra (tự động)</text>
+<text x="1126" y="301" class="bul">•  Bảng lương CN CSVC</text>
+<text x="1126" y="317" class="bul">•  BC tiến độ CSVC vườn cây</text>
+</g>
+
+<!-- OUTPUT 3 ORANGE -->
+<g class="hub-node" onclick="switchPage('bt3', mnav(3))">
+<rect class="nb" x="1110" y="362" width="310" height="90" fill="#fff" stroke="#c0781a"/>
+<line x1="1126" y1="392" x2="1404" y2="392" stroke="#c0781a" stroke-width="1.4"/>
+<text x="1265" y="384" text-anchor="middle" font-weight="800" font-size="13" fill="#9a5c0e">Lương nhà máy</text>
+<text x="1126" y="409" class="bul">•  BC lương CN nhà máy</text>
+<text x="1126" y="427" class="bul">•  BC hiệu quả sản xuất KD</text>
+</g>
+
+<!-- OUTPUT 4 PURPLE -->
+<g class="hub-node" onclick="switchPage('bt4', mnav(4))">
+<rect class="nb" x="1110" y="474" width="310" height="90" fill="#fff" stroke="#8060e0"/>
+<line x1="1126" y1="504" x2="1404" y2="504" stroke="#8060e0" stroke-width="1.4"/>
+<text x="1265" y="496" text-anchor="middle" font-weight="800" font-size="13" fill="#5834b0">Truy xuất</text>
+<text x="1126" y="521" class="bul">•  WEB truy xuất theo mã đơn hàng</text>
+<text x="1126" y="539" class="bul">•  BC quản trị kho</text>
+</g>
+
+<text x="223" y="742" text-anchor="middle" class="stg">DỮ LIỆU ĐẦU VÀO</text>
+<text x="475" y="742" text-anchor="middle" class="stg">DATA LAKE</text>
+<text x="665" y="742" text-anchor="middle" class="stg">DATA WAREHOUSE</text>
+<text x="925" y="742" text-anchor="middle" class="stg">DATA MART (BIGQUERY)</text>
+<text x="1265" y="742" text-anchor="middle" class="stg">KẾT QUẢ ĐẦU RA</text>
+</svg>
+
+<div class="legend">
+  <span style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#aaa">Chú thích luồng</span>
+  <div class="leg-item"><span class="leg-sw" style="background:#2fa876"></span>Khai thác — Sản lượng</div>
+  <div class="leg-item"><span class="leg-sw" style="background:#3d6ef5"></span>Chăm sóc vườn cây — CSVC</div>
+  <div class="leg-item"><span class="leg-sw" style="background:#c0781a"></span>Nhà máy chế biến</div>
+  <div class="leg-item"><span class="leg-sw" style="background:#8060e0"></span>Truy xuất nguồn gốc</div>
+  <div class="leg-item"><span style="font-size:9px;color:#e8440a;font-weight:700;padding:2px 6px;border:1px solid #f5c090;border-radius:3px;background:#fff8f0">ETL</span> = transform Lake → Warehouse</div>
+</div>
+</div>
+</div><!-- /page-overview -->
+
+<!-- ═══════════ PAGE: BT1-4 (rendered by JS) ═══════════ -->
+<div class="pagewrap" id="page-bt1">
+  <div class="bthdr" style="background:#2fa876">🌿 BT1 — SẢN LƯỢNG + LƯƠNG CÔNG NHÂN KHAI THÁC</div>
+  <div class="collabels"><div>INPUT</div><div>DATA LAKE</div><div>DATA WAREHOUSE</div><div>DATA MART</div><div>KẾT QUẢ ĐẦU RA</div></div>
+  <div class="flowcard"><svg class="flowsvg" id="svg-bt1" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  <div class="martdetail" id="martdetail-bt1"></div>
+  <div class="notebar">⚠️ Công thức tính lương bên dưới là <b>đề xuất minh họa</b> dựa trên dữ liệu đầu vào đã thu thập, cần thống nhất chính thức với khách hàng khi triển khai.</div>
+</div>
+<div class="pagewrap" id="page-bt2">
+  <div class="bthdr" style="background:#3d6ef5">🌳 BT2 — TIẾN ĐỘ + LƯƠNG CÔNG NHÂN CSVC (CHĂM SÓC VƯỜN CÂY)</div>
+  <div class="collabels"><div>INPUT</div><div>DATA LAKE</div><div>DATA WAREHOUSE</div><div>DATA MART</div><div>KẾT QUẢ ĐẦU RA</div></div>
+  <div class="flowcard"><svg class="flowsvg" id="svg-bt2" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  <div class="martdetail" id="martdetail-bt2"></div>
+  <div class="notebar">⚠️ Công thức tính lương bên dưới là <b>đề xuất minh họa</b> dựa trên dữ liệu đầu vào đã thu thập, cần thống nhất chính thức với khách hàng khi triển khai.</div>
+</div>
+<div class="pagewrap" id="page-bt3">
+  <div class="bthdr" style="background:#c0781a">🏭 BT3 — LƯƠNG CÔNG NHÂN NHÀ MÁY</div>
+  <div class="collabels"><div>INPUT</div><div>DATA LAKE</div><div>DATA WAREHOUSE</div><div>DATA MART</div><div>KẾT QUẢ ĐẦU RA</div></div>
+  <div class="flowcard"><svg class="flowsvg" id="svg-bt3" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  <div class="martdetail" id="martdetail-bt3"></div>
+  <div class="notebar">⚠️ Công thức tính lương bên dưới là <b>đề xuất minh họa</b> dựa trên dữ liệu đầu vào đã thu thập, cần thống nhất chính thức với khách hàng khi triển khai.</div>
+</div>
+<div class="pagewrap" id="page-bt4">
+  <div class="bthdr" style="background:#8060e0">🔗 BT4 — BÀI TOÁN TRUY XUẤT NGUỒN GỐC</div>
+  <div class="collabels"><div>INPUT</div><div>DATA LAKE</div><div>DATA WAREHOUSE</div><div>DATA MART</div><div>KẾT QUẢ ĐẦU RA</div></div>
+  <div class="flowcard"><svg class="flowsvg" id="svg-bt4" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  <div class="martdetail" id="martdetail-bt4"></div>
+  <div class="notebar">🔍 BT4 là bài toán quản lý tồn kho &amp; truy vết theo chuỗi mã A→B→C→D, không phát sinh công thức tính lương.</div>
+</div>
+
+</div><!-- /.page -->
+
+<script>
+/* ============ NAV ============ */
+function mnav(i){return document.querySelectorAll('#mainnav a')[i];}
+var CRUMBS={overview:'📖 Tổng quan',bt1:'🌿 BT1 Khai thác',bt2:'🌳 BT2 Vườn cây',bt3:'🏭 BT3 Nhà máy',bt4:'🔗 BT4 Nguồn gốc'};
+function switchPage(id,el){
+  document.querySelectorAll('.pagewrap').forEach(function(p){p.classList.remove('on');});
+  document.querySelectorAll('#mainnav a').forEach(function(a){a.classList.remove('on');});
+  document.getElementById('page-'+id).classList.add('on');
+  if(el) el.classList.add('on');
+  document.getElementById('crumb').textContent=CRUMBS[id]||'';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ============ PER-BT FLOW DATA ============ */
+var FLOWS = {
+bt1:{color:'#2fa876', dark:'#177049', martName:'Data Mart 1', martSub:'Sản lượng & Lương khai thác', martTables:['fact_san_luong_khai_thac','fact_luong_khai_thac'],
+  inputs:[
+    {title:'Kế hoạch sản lượng năm', fields:['Theo lô, theo tháng']},
+    {id:'appsheet-sl', title:'3 AppSheet ghi nhận', fields:['Ghi nhận mủ','Xác nhận DRC','Quy khô mủ tươi ban đầu','Đưa dữ liệu thô vào Data Lake']},
+    {title:'Chấm công thợ cạo', fields:['Theo ngày, theo đội']}
+  ],
+  outputs:[
+    {type:'report', title:'Báo cáo sản lượng', items:['SL cạo theo ngày/tuần/tháng/quý/năm','So sánh SL thực tế và Kế hoạch','SL theo đội / lô / khu vực']},
+    {type:'formula', title:'BC Bảng lương tự động — Cơ cấu', lines:['Lương sản phẩm = Sản lượng quy khô × Đơn giá/kg × Hệ số chất lượng','Khoản trừ = Khấu trừ chất lượng + Tổng tiền BHXH','BHXH = Hệ số đóng × Lương cơ bản','Chốt lương = Tổng lương − Khoản trừ']},
+    {type:'formula', title:'BC Bảng lương tự động — Lương ăn ca', lines:['Lương ăn ca = Số công ăn ca × Đơn giá ăn ca','Cộng vào Chốt lương của kỳ tương ứng']},
+    {type:'report', title:'Báo cáo lương — Tổng quỹ lương', items:['Tổng hợp quỹ lương toàn đơn vị','Đối chiếu quỹ lương thực chi vs kế hoạch']}
+  ]},
+bt2:{color:'#3d6ef5', dark:'#1e4bc0', martName:'Data Mart 2', martSub:'Tiến độ & Lương CSVC', martTables:['fact_tien_do_csvc','fact_luong_csvc'],
+  inputs:[
+    {title:'KH chăm sóc vườn cây', fields:['Theo hạng mục, theo tháng']},
+    {title:'Appsheet phân bổ', fields:['Hạng mục — định mức công']},
+    {title:'Appsheet nghiệm thu + phúc tra', fields:['Khối lượng thực hiện','Kết quả phúc tra']}
+  ],
+  outputs:[
+    {type:'report', title:'Biểu mẫu xác nhận nội bộ', items:['Xác nhận định mức công việc','Xác nhận nghiệm thu tự động']},
+    {type:'report', title:'Báo cáo tiến độ chi tiết', items:['Tiến độ từng công việc / hạng mục','Theo đội, theo lô']},
+    {type:'report', title:'Báo cáo tiến độ tổng hợp CSVC', items:['Tổng hợp tiến độ toàn vườn cây','So sánh thực hiện vs kế hoạch']},
+    {type:'formula', title:'BC Bảng lương tự động — Cơ cấu', lines:['Lương CSVC = Công quy đổi × Đơn giá công','Khoản trừ = Tổng điểm phạt + Tổng tiền BHXH','BHXH = Hệ số đóng × Lương cơ bản','Chốt lương = Tổng lương − Khoản trừ']},
+    {type:'report', title:'Bảng lương tổng hợp CSVC', items:['Tổng hợp lương toàn đội CSVC theo tháng']}
+  ]},
+bt3:{color:'#c0781a', dark:'#9a5c0e', martName:'Data Mart 3', martSub:'Lương nhà máy', martTables:['fact_san_xuat_nha_may','fact_luong_nha_may'],
+  inputs:[
+    {title:'Googlesheet nghiệp vụ', fields:['SL đưa vào chế biến','SL thành phẩm theo ca']},
+    {title:'Dữ liệu chấm công', fields:['Theo ca sản xuất']}
+  ],
+  outputs:[
+    {type:'formula', title:'BC Bảng lương tự động — Cơ cấu', lines:['Lương sản phẩm = SL thành phẩm × Đơn giá/kg','Khoản trừ = Hao hụt vượt định mức + Tổng tiền BHXH','BHXH = Hệ số đóng × Lương cơ bản','Chốt lương = Tổng lương − Khoản trừ']},
+    {type:'report', title:'Báo cáo lương — Tổng quỹ lương', items:['Tổng hợp quỹ lương nhà máy','Đối chiếu thực chi vs định mức']}
+  ]},
+bt4:{color:'#8060e0', dark:'#5834b0', martName:'Data Mart 4', martSub:'Truy xuất nguồn gốc', martTables:['fact_giao_nhan','fact_che_bien','fact_lo_sx','fact_don_hang'],
+  inputs:[
+    {title:'Base Platform', fields:['Mã A: Giao nhận','Mã B: Chế biến','Mã C: Lô SX','Mã D: Đơn hàng']}
+  ],
+  outputs:[
+    {type:'report', title:'WEB truy xuất theo mã đơn hàng', items:['Tra cứu chuỗi mã A → B → C → D','Xem lịch sử giao nhận – chế biến']},
+    {type:'report', title:'BC quản trị kho', items:['Tồn kho theo cấp độ mã','Xuất – nhập – tồn nguyên liệu']},
+    {type:'formula', title:'Logic liên kết chuỗi mã', lines:['Tồn mã A = Nhập A − Đã chuyển sang B','Tồn mã B = Nhận từ A − Đã chuyển sang C','Tồn mã C = Nhập kho − Đã gán vào D','Tồn mã D = Đã gán − Đã xuất bán']}
+  ]}
+};
+
+/* ============ GENERIC FLOW RENDERER ============ */
+function estH(lines){
+  var h=46;
+  lines.forEach(function(l){ h += 16*Math.max(1, Math.ceil((l.length||1)/34)); });
+  return h+14;
+}
+function boxDiv(item,color,dark,type){
+  var base = "height:100%;box-sizing:border-box;font-family:'Be Vietnam Pro',Arial,sans-serif;overflow:hidden;overflow-wrap:anywhere;word-break:normal;line-height:1.35";
+  var directBg = item.direct ? color+'18' : '#fff';
+  if(type==='input'){
+    return '<div xmlns="http://www.w3.org/1999/xhtml" style="border:1.5px solid '+color+';background:'+color+'14;border-radius:10px;padding:8px 12px;'+base+'">'+
+      '<div style="font-weight:800;font-size:11.7px;color:'+dark+';margin-bottom:5px;line-height:1.25">'+item.title+'</div>'+
+      item.fields.map(function(f){return '<div style="font-size:10.2px;color:#444;line-height:1.45">•&nbsp; '+f+'</div>';}).join('')+
+    '</div>';
+  }
+  if(type==='report'){
+    return '<div xmlns="http://www.w3.org/1999/xhtml" style="border:1.5px solid '+color+';background:'+directBg+';border-radius:10px;padding:8px 12px;'+base+'">'+
+      '<div style="font-weight:800;font-size:11.7px;color:'+dark+';margin-bottom:5px;line-height:1.25">'+(item.direct?'📱 ':'📊 ')+item.title+'</div>'+
+      item.items.map(function(f){return '<div style="font-size:10.2px;color:#444;line-height:1.45">✓&nbsp; '+f+'</div>';}).join('')+
+    '</div>';
+  }
+  return '<div xmlns="http://www.w3.org/1999/xhtml" style="border:1.4px dashed #d8cf9a;background:#fffdf3;border-radius:10px;padding:8px 12px;'+base+'">'+
+    '<div style="font-weight:800;font-size:11px;color:#a68a1a;margin-bottom:5px;line-height:1.25">⚡ '+item.title+'</div>'+
+    item.lines.map(function(f){return '<div style="font-size:9.4px;color:#5a4a10;line-height:1.45;font-family:\'Courier New\',monospace;overflow-wrap:anywhere">'+f+'</div>';}).join('')+
+  '</div>';
+}
+
+function renderFlow(svgId, cfg){
+  var svg=document.getElementById(svgId);
+  var W=1440, inX=40, inW=260, outX=1080, outW=320;
+  var gap=20;
+
+  var inH = cfg.inputs.map(function(b){return estH(b.fields);});
+  var outH = cfg.outputs.map(function(b){return estH(b.items||b.lines);});
+  var leftTotal = inH.reduce(function(a,h){return a+h;},0) + gap*(inH.length-1);
+  var rightTotal = outH.reduce(function(a,h){return a+h;},0) + gap*(outH.length-1);
+  var svgH = Math.max(leftTotal, rightTotal, 340) + 90;
+  var cy = svgH/2;
+
+  var y = cy - leftTotal/2;
+  var inPos = inH.map(function(h){var p={y:y,h:h}; y+=h+gap; return p;});
+  var y2 = cy - rightTotal/2;
+  var outPos = outH.map(function(h){var p={y:y2,h:h}; y2+=h+gap; return p;});
+
+  var lakeX=330, lakeW=130, lakeH=160, lakeY=cy-lakeH/2;
+  var dwhX=500, dwhW=155, dwhH=160, dwhY=cy-dwhH/2;
+  var ellipseCx=790, ellipseCy=cy, ellipseRx=110, ellipseRy=48;
+
+  var defsColor = cfg.color.replace('#','');
+  var svgParts=[];
+  svgParts.push('<defs><marker id="m-'+defsColor+'" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="'+cfg.color+'" stroke-width="1.8"/></marker>' +
+    '<marker id="m-lk-'+defsColor+'" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="#2060c0" stroke-width="1.8"/></marker>' +
+    '<marker id="m-etl-'+defsColor+'" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="#e8440a" stroke-width="1.8"/></marker></defs>');
+  svgParts.push('<style>text{font-family:"Be Vietnam Pro",Arial,sans-serif}.fl-'+defsColor+'{fill:none;stroke:'+cfg.color+';stroke-width:2.1;stroke-dasharray:6 6;animation:dm-'+defsColor+' 1.4s linear infinite}.fl-lk-'+defsColor+'{fill:none;stroke:#2060c0;stroke-width:2.1;stroke-dasharray:6 6;animation:dm-'+defsColor+' 1.4s linear infinite}.fl-etl-'+defsColor+'{fill:none;stroke:#e8440a;stroke-width:2.1;stroke-dasharray:6 6;animation:dm-'+defsColor+' 1.4s linear infinite}@keyframes dm-'+defsColor+'{to{stroke-dashoffset:-24}}</style>');
+
+  // input -> Data Lake
+  inPos.forEach(function(p){
+    var sy=p.y+p.h/2;
+    svgParts.push('<path class="fl-lk-'+defsColor+'" marker-end="url(#m-lk-'+defsColor+')" d="M'+(inX+inW)+','+sy+' C '+(inX+inW+90)+','+sy+' '+(lakeX-70)+','+cy+' '+lakeX+','+cy+'"/>');
+  });
+  // Data Lake -> ETL -> Data Warehouse
+  svgParts.push('<path class="fl-etl-'+defsColor+'" marker-end="url(#m-etl-'+defsColor+')" d="M'+(lakeX+lakeW)+','+cy+' L '+dwhX+','+cy+'"/>');
+  svgParts.push('<text x="'+(lakeX+lakeW+(dwhX-lakeX-lakeW)/2)+'" y="'+(cy-8)+'" text-anchor="middle" font-size="9.5" font-weight="800" fill="#e8440a">ETL</text>');
+  // Data Warehouse -> Data Mart ellipse
+  svgParts.push('<path class="fl-'+defsColor+'" marker-end="url(#m-'+defsColor+')" d="M'+(dwhX+dwhW)+','+cy+' L '+(ellipseCx-ellipseRx)+','+cy+'"/>');
+  // data mart -> outputs
+  outPos.forEach(function(p,i){
+    var sy=p.y+p.h/2;
+    svgParts.push('<path class="fl-'+defsColor+'" marker-end="url(#m-'+defsColor+')" d="M'+(ellipseCx+ellipseRx)+','+cy+' C '+(ellipseCx+ellipseRx+130)+','+cy+' '+(outX-140)+','+sy+' '+outX+','+sy+'"/>');
+  });
+
+  // input boxes
+  cfg.inputs.forEach(function(item,i){
+    var p=inPos[i];
+    svgParts.push('<foreignObject x="'+inX+'" y="'+p.y+'" width="'+inW+'" height="'+p.h+'">'+boxDiv(item,cfg.color,cfg.dark,'input')+'</foreignObject>');
+  });
+
+  // Data Lake box
+  svgParts.push('<rect x="'+lakeX+'" y="'+lakeY+'" width="'+lakeW+'" height="'+lakeH+'" rx="10" fill="#eef3fc" stroke="#2060c0" stroke-width="1.6"/>');
+  svgParts.push('<text x="'+(lakeX+lakeW/2)+'" y="'+(lakeY+23)+'" text-anchor="middle" font-weight="800" font-size="12.4" fill="#123d78">Data Lake</text>');
+  svgParts.push('<text x="'+(lakeX+lakeW/2)+'" y="'+(lakeY+39)+'" text-anchor="middle" font-size="9.2" font-weight="700" fill="#2060c0">Google BigQuery</text>');
+  svgParts.push('<line x1="'+(lakeX+12)+'" y1="'+(lakeY+48)+'" x2="'+(lakeX+lakeW-12)+'" y2="'+(lakeY+48)+'" stroke="#c8d8ee"/>');
+  svgParts.push('<text x="'+(lakeX+12)+'" y="'+(lakeY+64)+'" font-size="9.2" fill="#444">•  Raw · immutable</text>');
+  svgParts.push('<text x="'+(lakeX+12)+'" y="'+(lakeY+79)+'" font-size="9.2" fill="#444">•  Dữ liệu thô</text>');
+  svgParts.push('<text x="'+(lakeX+24)+'" y="'+(lakeY+93)+'" font-size="9.2" fill="#444">đầu vào</text>');
+  svgParts.push('<text x="'+(lakeX+12)+'" y="'+(lakeY+111)+'" font-size="9.2" fill="#444">•  Lưu vĩnh viễn,</text>');
+  svgParts.push('<text x="'+(lakeX+24)+'" y="'+(lakeY+125)+'" font-size="9.2" fill="#444">không chỉnh sửa</text>');
+
+  // Data Warehouse box
+  svgParts.push('<rect x="'+dwhX+'" y="'+dwhY+'" width="'+dwhW+'" height="'+dwhH+'" rx="10" fill="#eefaf1" stroke="#1a6020" stroke-width="1.6"/>');
+  svgParts.push('<text x="'+(dwhX+dwhW/2)+'" y="'+(dwhY+23)+'" text-anchor="middle" font-weight="800" font-size="12.2" fill="#164d1a">Data Warehouse</text>');
+  svgParts.push('<text x="'+(dwhX+dwhW/2)+'" y="'+(dwhY+39)+'" text-anchor="middle" font-size="9.2" font-weight="700" fill="#1a6020">SQL · chuẩn hóa</text>');
+  svgParts.push('<line x1="'+(dwhX+12)+'" y1="'+(dwhY+48)+'" x2="'+(dwhX+dwhW-12)+'" y2="'+(dwhY+48)+'" stroke="#c8e4cc"/>');
+  svgParts.push('<text x="'+(dwhX+12)+'" y="'+(dwhY+64)+'" font-size="9.2" fill="#444">•  Chuẩn hóa theo lô,</text>');
+  svgParts.push('<text x="'+(dwhX+24)+'" y="'+(dwhY+78)+'" font-size="9.2" fill="#444">đội, công nhân</text>');
+  svgParts.push('<text x="'+(dwhX+12)+'" y="'+(dwhY+96)+'" font-size="9.2" fill="#444">•  Áp dụng công thức</text>');
+  svgParts.push('<text x="'+(dwhX+24)+'" y="'+(dwhY+110)+'" font-size="9.2" fill="#444">tính lương</text>');
+  svgParts.push('<text x="'+(dwhX+12)+'" y="'+(dwhY+128)+'" font-size="9.2" fill="#444">•  Nguồn chuẩn</text>');
+  svgParts.push('<text x="'+(dwhX+24)+'" y="'+(dwhY+142)+'" font-size="9.2" fill="#444">cho Data Mart</text>');
+
+  // Data Mart ellipse + label
+  svgParts.push('<ellipse cx="'+ellipseCx+'" cy="'+ellipseCy+'" rx="'+ellipseRx+'" ry="'+ellipseRy+'" fill="'+cfg.color+'"/>');
+  svgParts.push('<text x="'+ellipseCx+'" y="'+(ellipseCy-11)+'" text-anchor="middle" font-weight="800" font-size="13.5" fill="#fff">'+(cfg.martName||'Data Mart')+'</text>');
+  svgParts.push('<text x="'+ellipseCx+'" y="'+(ellipseCy+5)+'" text-anchor="middle" font-size="9.5" fill="#ffffffe6">'+(cfg.martSub||'')+'</text>');
+  svgParts.push('<text x="'+ellipseCx+'" y="'+(ellipseCy+19)+'" text-anchor="middle" font-size="8" fill="#ffffffcc">Google BigQuery</text>');
+
+  // output boxes
+  cfg.outputs.forEach(function(item,i){
+    var p=outPos[i];
+    svgParts.push('<foreignObject x="'+outX+'" y="'+p.y+'" width="'+outW+'" height="'+p.h+'">'+boxDiv(item,cfg.color,cfg.dark,item.type)+'</foreignObject>');
+  });
+
+  svg.setAttribute('viewBox','0 0 '+W+' '+svgH);
+  svg.innerHTML = svgParts.join('');
+}
+
+['bt1','bt2','bt3','bt4'].forEach(function(k){ renderFlow('svg-'+k, FLOWS[k]); });
+
+/* ============ DATA MART SCHEMA DETAIL (below each flow) ============ */
+var MART_SCHEMAS = {
+bt1:{
+  title:'DM_SanLuongKhaiThac', sub:'Data Mart 1 · phục vụ báo cáo sản lượng & bảng lương công nhân khai thác',
+  facts:[
+    {name:'fact_san_luong_khai_thac', desc:'Sản lượng cạo mủ theo ngày · lô · công nhân', cols:[
+      {name:'ngay', type:'date', desc:'Ngày ghi nhận', pk:1},
+      {name:'ma_cong_nhan', type:'varchar FK', desc:'→ dim_cong_nhan'},
+      {name:'ma_lo', type:'varchar FK', desc:'→ dim_lo'},
+      {name:'ma_doi', type:'varchar FK', desc:'→ dim_doi'},
+      {name:'san_luong_tuoi_kg', type:'decimal', desc:'SL mủ tươi thu hoạch'},
+      {name:'drc_percent', type:'decimal', desc:'Hàm lượng cao su khô (%)'},
+      {name:'san_luong_quy_kho_kg', type:'decimal', desc:'= SL tươi × DRC%'},
+      {name:'don_gia_kg', type:'decimal', desc:'Đơn giá theo phân loại mủ'},
+      {name:'thanh_tien', type:'decimal', desc:'= SL quy khô × đơn giá'}
+    ]},
+    {name:'fact_luong_khai_thac', desc:'Bảng lương công nhân khai thác theo kỳ lương', cols:[
+      {name:'ky_luong', type:'varchar', desc:'Kỳ lương (tuần/tháng)', pk:1},
+      {name:'ma_cong_nhan', type:'varchar FK', desc:'→ dim_cong_nhan'},
+      {name:'luong_san_pham', type:'decimal', desc:'SL quy khô × đơn giá × hệ số CL'},
+      {name:'luong_an_ca', type:'decimal', desc:'Số công ăn ca × đơn giá ăn ca'},
+      {name:'khoan_tru_chat_luong', type:'decimal', desc:'Khấu trừ theo chất lượng mủ'},
+      {name:'bhxh', type:'decimal', desc:'Hệ số đóng × lương cơ bản'},
+      {name:'chot_luong', type:'decimal', desc:'= Tổng lương − khoản trừ'}
+    ]}
+  ],
+  dims:[
+    {name:'dim_cong_nhan', desc:'Danh mục công nhân khai thác', cols:[
+      {name:'ma_cong_nhan', type:'varchar', desc:'Mã công nhân', pk:1},
+      {name:'ho_ten', type:'varchar', desc:'Họ tên'},
+      {name:'ma_doi', type:'varchar FK', desc:'→ dim_doi'},
+      {name:'chuc_danh', type:'varchar', desc:'Thợ cạo / Tổ trưởng…'}
+    ]},
+    {name:'dim_doi', desc:'Danh mục đội khai thác', cols:[
+      {name:'ma_doi', type:'varchar', desc:'Mã đội', pk:1},
+      {name:'ten_doi', type:'varchar', desc:'Tên đội'},
+      {name:'khu_vuc', type:'varchar', desc:'Khu vực quản lý'}
+    ]},
+    {name:'dim_lo', desc:'Danh mục lô cao su', cols:[
+      {name:'ma_lo', type:'varchar', desc:'Mã lô', pk:1},
+      {name:'ten_lo', type:'varchar', desc:'Tên lô'},
+      {name:'dien_tich_ha', type:'decimal', desc:'Diện tích (ha)'},
+      {name:'nam_trong', type:'int', desc:'Năm trồng'}
+    ]},
+    {name:'dim_ngay', desc:'Lịch làm việc chuẩn hóa', cols:[
+      {name:'ngay', type:'date', desc:'Ngày', pk:1},
+      {name:'tuan', type:'int', desc:'Tuần trong năm'},
+      {name:'thang', type:'int', desc:'Tháng'},
+      {name:'quy', type:'int', desc:'Quý'},
+      {name:'nam', type:'int', desc:'Năm'}
+    ]}
+  ]
+},
+bt2:{
+  title:'DM_TienDoCSVC', sub:'Data Mart 2 · phục vụ báo cáo tiến độ & bảng lương công nhân CSVC',
+  facts:[
+    {name:'fact_tien_do_csvc', desc:'Tiến độ thực hiện hạng mục CSVC theo ngày · lô', cols:[
+      {name:'ngay', type:'date', desc:'Ngày ghi nhận', pk:1},
+      {name:'ma_doi', type:'varchar FK', desc:'→ dim_doi'},
+      {name:'ma_lo', type:'varchar FK', desc:'→ dim_lo'},
+      {name:'ma_hang_muc', type:'varchar FK', desc:'→ dim_hang_muc'},
+      {name:'khoi_luong_ke_hoach', type:'decimal', desc:'KL kế hoạch theo định mức'},
+      {name:'khoi_luong_thuc_hien', type:'decimal', desc:'KL nghiệm thu thực tế'},
+      {name:'ket_qua_phuc_tra', type:'varchar', desc:'Đạt / Không đạt'},
+      {name:'ty_le_hoan_thanh', type:'decimal', desc:'= Thực hiện / Kế hoạch'}
+    ]},
+    {name:'fact_luong_csvc', desc:'Bảng lương công nhân CSVC theo kỳ lương', cols:[
+      {name:'ky_luong', type:'varchar', desc:'Kỳ lương', pk:1},
+      {name:'ma_cong_nhan', type:'varchar FK', desc:'→ dim_cong_nhan'},
+      {name:'so_cong_quy_doi', type:'decimal', desc:'Công quy đổi từ khối lượng'},
+      {name:'don_gia_cong', type:'decimal', desc:'Đơn giá / công'},
+      {name:'tong_diem_phat', type:'decimal', desc:'Điểm phạt từ phúc tra'},
+      {name:'bhxh', type:'decimal', desc:'Hệ số đóng × lương cơ bản'},
+      {name:'chot_luong', type:'decimal', desc:'= Tổng lương − khoản trừ'}
+    ]}
+  ],
+  dims:[
+    {name:'dim_hang_muc', desc:'Danh mục hạng mục chăm sóc vườn cây', cols:[
+      {name:'ma_hang_muc', type:'varchar', desc:'Mã hạng mục', pk:1},
+      {name:'ten_hang_muc', type:'varchar', desc:'Tên hạng mục (bón phân, làm cỏ…)'},
+      {name:'dinh_muc_cong', type:'decimal', desc:'Định mức công / đơn vị'}
+    ]},
+    {name:'dim_cong_nhan', desc:'Danh mục công nhân CSVC', cols:[
+      {name:'ma_cong_nhan', type:'varchar', desc:'Mã công nhân', pk:1},
+      {name:'ho_ten', type:'varchar', desc:'Họ tên'},
+      {name:'ma_doi', type:'varchar FK', desc:'→ dim_doi'}
+    ]},
+    {name:'dim_doi', desc:'Danh mục đội CSVC', cols:[
+      {name:'ma_doi', type:'varchar', desc:'Mã đội', pk:1},
+      {name:'ten_doi', type:'varchar', desc:'Tên đội'}
+    ]},
+    {name:'dim_lo', desc:'Danh mục lô vườn cây', cols:[
+      {name:'ma_lo', type:'varchar', desc:'Mã lô', pk:1},
+      {name:'ten_lo', type:'varchar', desc:'Tên lô'},
+      {name:'dien_tich_ha', type:'decimal', desc:'Diện tích (ha)'}
+    ]}
+  ]
+},
+bt3:{
+  title:'DM_LuongNhaMay', sub:'Data Mart 3 · phục vụ báo cáo sản xuất & bảng lương công nhân nhà máy',
+  facts:[
+    {name:'fact_san_xuat_nha_may', desc:'Sản lượng chế biến theo ca sản xuất', cols:[
+      {name:'ca_sx', type:'varchar', desc:'Mã ca sản xuất', pk:1},
+      {name:'ngay', type:'date', desc:'Ngày sản xuất', pk:1},
+      {name:'sl_dua_vao_che_bien_kg', type:'decimal', desc:'SL mủ đưa vào chế biến'},
+      {name:'sl_thanh_pham_kg', type:'decimal', desc:'SL thành phẩm ra lò'},
+      {name:'hao_hut_kg', type:'decimal', desc:'= Đầu vào − thành phẩm'},
+      {name:'ty_le_hao_hut', type:'decimal', desc:'So với định mức cho phép'}
+    ]},
+    {name:'fact_luong_nha_may', desc:'Bảng lương công nhân nhà máy theo kỳ lương', cols:[
+      {name:'ky_luong', type:'varchar', desc:'Kỳ lương', pk:1},
+      {name:'ma_cong_nhan', type:'varchar FK', desc:'→ dim_cong_nhan'},
+      {name:'vi_tri', type:'varchar', desc:'Lái xe / đánh đông / CN nhà máy'},
+      {name:'luong_san_pham', type:'decimal', desc:'SL thành phẩm × đơn giá/kg'},
+      {name:'khoan_tru_hao_hut', type:'decimal', desc:'Hao hụt vượt định mức'},
+      {name:'bhxh', type:'decimal', desc:'Hệ số đóng × lương cơ bản'},
+      {name:'chot_luong', type:'decimal', desc:'= Tổng lương − khoản trừ'}
+    ]}
+  ],
+  dims:[
+    {name:'dim_ca_sx', desc:'Danh mục ca sản xuất', cols:[
+      {name:'ma_ca', type:'varchar', desc:'Mã ca', pk:1},
+      {name:'gio_bat_dau', type:'time', desc:'Giờ bắt đầu'},
+      {name:'gio_ket_thuc', type:'time', desc:'Giờ kết thúc'}
+    ]},
+    {name:'dim_cong_nhan', desc:'Danh mục công nhân nhà máy', cols:[
+      {name:'ma_cong_nhan', type:'varchar', desc:'Mã công nhân', pk:1},
+      {name:'ho_ten', type:'varchar', desc:'Họ tên'},
+      {name:'vi_tri', type:'varchar', desc:'Vị trí công việc'}
+    ]},
+    {name:'dim_dinh_muc', desc:'Định mức hao hụt theo loại sản phẩm', cols:[
+      {name:'loai_san_pham', type:'varchar', desc:'Loại sản phẩm', pk:1},
+      {name:'dinh_muc_hao_hut_cho_phep', type:'decimal', desc:'% hao hụt cho phép'}
+    ]}
+  ]
+},
+bt4:{
+  title:'DM_TruyXuatNguonGoc', sub:'Data Mart 4 · liên kết chuỗi mã A → B → C → D phục vụ truy xuất & quản trị kho',
+  facts:[
+    {name:'fact_giao_nhan', desc:'Mã A — Giao nhận nguyên liệu đầu vào', cols:[
+      {name:'ma_a', type:'varchar', desc:'Mã giao nhận', pk:1},
+      {name:'ngay_giao', type:'date', desc:'Ngày giao nhận'},
+      {name:'ma_lo', type:'varchar FK', desc:'Lô khai thác nguồn gốc'},
+      {name:'khoi_luong_tuoi_kg', type:'decimal', desc:'Khối lượng mủ tươi'},
+      {name:'nguon_goc_ho', type:'varchar', desc:'Hộ / đội giao nộp'}
+    ]},
+    {name:'fact_che_bien', desc:'Mã B — Chế biến, liên kết ngược về mã A', cols:[
+      {name:'ma_b', type:'varchar', desc:'Mã chế biến', pk:1},
+      {name:'ma_a_lienket', type:'varchar FK', desc:'→ fact_giao_nhan'},
+      {name:'ngay_che_bien', type:'date', desc:'Ngày chế biến'},
+      {name:'sl_dau_vao_kg', type:'decimal', desc:'SL đưa vào chế biến'},
+      {name:'sl_dau_ra_kg', type:'decimal', desc:'SL thành phẩm sau chế biến'}
+    ]},
+    {name:'fact_lo_sx', desc:'Mã C — Lô sản xuất, liên kết ngược về mã B', cols:[
+      {name:'ma_c', type:'varchar', desc:'Mã lô sản xuất', pk:1},
+      {name:'ma_b_lienket', type:'varchar FK', desc:'→ fact_che_bien'},
+      {name:'ngay_dong_goi', type:'date', desc:'Ngày đóng gói'},
+      {name:'khoi_luong_tan', type:'decimal', desc:'Khối lượng (tấn)'},
+      {name:'quy_cach', type:'varchar', desc:'Quy cách đóng gói'}
+    ]},
+    {name:'fact_don_hang', desc:'Mã D — Đơn hàng, liên kết ngược về mã C', cols:[
+      {name:'ma_d', type:'varchar', desc:'Mã đơn hàng', pk:1},
+      {name:'ma_c_lienket', type:'varchar FK', desc:'→ fact_lo_sx'},
+      {name:'ma_khach_hang', type:'varchar FK', desc:'→ dim_khach_hang'},
+      {name:'ngay_xuat', type:'date', desc:'Ngày xuất hàng'},
+      {name:'so_luong_tan', type:'decimal', desc:'Số lượng xuất (tấn)'}
+    ]}
+  ],
+  dims:[
+    {name:'dim_kho', desc:'Danh mục kho lưu trữ', cols:[
+      {name:'ma_kho', type:'varchar', desc:'Mã kho', pk:1},
+      {name:'ten_kho', type:'varchar', desc:'Tên kho'},
+      {name:'dia_chi', type:'varchar', desc:'Địa chỉ'}
+    ]},
+    {name:'dim_khach_hang', desc:'Danh mục khách hàng', cols:[
+      {name:'ma_khach_hang', type:'varchar', desc:'Mã khách hàng', pk:1},
+      {name:'ten_khach_hang', type:'varchar', desc:'Tên khách hàng'},
+      {name:'quoc_gia', type:'varchar', desc:'Quốc gia'}
+    ]}
+  ]
+}
+};
+
+function mtCard(t,cfg,isFact){
+  var badgeColor = isFact ? cfg.color : '#9a9a9a';
+  var rows = t.cols.map(function(c){
+    return '<tr><td class="'+(c.pk?'pk':'')+'" style="color:'+(c.pk?cfg.dark:'#333')+'">'+(c.pk?'🔑 ':'')+c.name+'</td><td class="tp">'+c.type+'</td><td class="ds">'+c.desc+'</td></tr>';
+  }).join('');
+  return '<div class="mtcard'+(isFact?' fact':'')+'" style="border-color:'+cfg.color+'66">'+
+    '<div class="mtcard-hd" style="background:'+cfg.color+'14">'+
+      '<div><div class="mtname">'+t.name+'</div><div class="mtdesc">'+t.desc+'</div></div>'+
+      '<span class="mtbadge" style="background:'+badgeColor+'">'+(isFact?'FACT':'DIM')+'</span>'+
+    '</div>'+
+    '<table class="mttable"><thead><tr style="background:'+cfg.color+'0d"><th style="color:'+cfg.dark+'">Cột</th><th style="color:'+cfg.dark+'">Kiểu</th><th style="color:'+cfg.dark+'">Mô tả</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+  '</div>';
+}
+
+function renderMartDetail(containerId, cfg, schema){
+  var el = document.getElementById(containerId);
+  if(!el || !schema) return;
+  var html = '<div class="martdetail-hd">'+
+    '<span class="mdtag" style="background:'+cfg.dark+'">'+cfg.martName+'</span>'+
+    '<div><div class="mdttl">'+schema.title+' — Chi tiết Data Mart</div><div class="mdsub">'+schema.sub+'</div></div>'+
+  '</div>';
+  html += '<div class="mtdimtitle" style="color:'+cfg.dark+'">📌 Bảng Fact</div><div class="martgrid">';
+  schema.facts.forEach(function(t){ html += mtCard(t,cfg,true); });
+  html += '</div>';
+  html += '<div class="mtdimtitle" style="color:'+cfg.dark+'">📚 Bảng Dimension</div><div class="martgrid">';
+  schema.dims.forEach(function(t){ html += mtCard(t,cfg,false); });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+['bt1','bt2','bt3','bt4'].forEach(function(k){ renderMartDetail('martdetail-'+k, FLOWS[k], MART_SCHEMAS[k]); });
+</script>
 </body>
 </html>
